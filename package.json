@@ -10,6 +10,7 @@
   },
   "files": [
     "dist",
+    "data/no-fin.db",
     "server.json"
   ],
   "engines": {
@@ -46,6 +47,7 @@
     "start": "node dist/src/http-server.js",
     "seed": "npx tsx scripts/seed-sample.ts",
     "ingest": "npx tsx scripts/ingest-all.ts",
+    "prepublishOnly": "npm run build && npm run ingest",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit"
   },

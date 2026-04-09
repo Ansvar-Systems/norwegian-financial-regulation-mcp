@@ -11,9 +11,14 @@
 
 import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DB_PATH = process.env["NO_FIN_DB_PATH"] ?? "data/no-fin.db";
+const __db_dirname = dirname(fileURLToPath(import.meta.url));
+// When compiled: dist/src/db.js → need ../../data/no-fin.db to reach project root
+const DB_PATH =
+  process.env["NO_FIN_DB_PATH"] ??
+  join(__db_dirname, "..", "..", "data", "no-fin.db");
 
 export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS sourcebooks (
