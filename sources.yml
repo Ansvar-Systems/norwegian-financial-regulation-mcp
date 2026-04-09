@@ -10,8 +10,9 @@ sources:
   - name: "Finanstilsynet (Norwegian Financial Supervisory Authority)"
     authority: "Finanstilsynet"
     official_url: "https://www.finanstilsynet.no/"
-    retrieval_method: "MANUAL_CURATION"
-    format: "HTML"
+    retrieval_method: "API_FETCH"
+    api_endpoint: "https://www.finanstilsynet.no/api/search/nyhetsarkiv"
+    format: "JSON + HTML"
     authentication: "none"
     update_frequency: "quarterly"
     license:
@@ -19,15 +20,15 @@ sources:
       url: "https://www.finanstilsynet.no/"
       summary: "Norwegian regulatory publications are freely available"
     coverage:
-      scope: "Forskrifter, rundskriv, veiledninger, and enforcement actions for financial sector supervision"
-      item_count: 236
+      scope: "Rundskriv (circulars), veiledninger (guidance), and enforcement actions"
+      item_count: 285
     languages:
       - "no"
 
   - name: "Lovdata (Norwegian Legal Information System)"
     authority: "Lovdata"
     official_url: "https://lovdata.no"
-    retrieval_method: "MANUAL_CURATION"
+    retrieval_method: "HTML_SCRAPE"
     format: "HTML"
     authentication: "none"
     update_frequency: "quarterly"
@@ -36,7 +37,7 @@ sources:
       url: "https://lovdata.no"
       summary: "Norwegian legislation and regulations are public records"
     coverage:
-      scope: "Official text of forskrifter and lover referenced by Finanstilsynet provisions"
-      item_count: 0
+      scope: "Key financial forskrifter (CRR/CRD, AML, insurance, securities)"
+      item_count: 7
     languages:
       - "no"

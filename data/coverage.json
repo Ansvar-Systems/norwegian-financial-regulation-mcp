@@ -2,70 +2,78 @@
   "schema_version": "1.0",
   "mcp_name": "Norwegian Financial Regulation MCP",
   "mcp_type": "domain_intelligence",
-  "coverage_date": "2026-04-04",
-  "database_version": "0.1.0",
+  "coverage_date": "2026-04-09",
+  "database_version": "1.0.0",
   "sources": [
     {
       "id": "ftno_forskrifter",
       "name": "Finanstilsynet Forskrifter (Regulations)",
-      "authority": "Finanstilsynet",
-      "url": "https://www.finanstilsynet.no/",
+      "authority": "Lovdata / Finansdepartementet",
+      "url": "https://lovdata.no",
       "version": "Current in-force regulations",
-      "item_count": 158,
+      "item_count": 7,
       "item_type": "provision",
-      "last_refresh": "2026-04-04",
+      "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
-      "completeness": "full",
-      "completeness_note": "158 forskrifter covering capital adequacy, anti-money laundering, insurance solvency, securities trading, payment services"
+      "completeness": "partial",
+      "completeness_note": "7 key financial regulations from Lovdata covering CRR/CRD, AML, insurance, securities, real estate, and payment services."
     },
     {
       "id": "ftno_rundskriv",
       "name": "Finanstilsynet Rundskriv (Circulars)",
       "authority": "Finanstilsynet",
-      "url": "https://www.finanstilsynet.no/",
-      "version": "Current circulars",
-      "item_count": 109,
+      "url": "https://www.finanstilsynet.no/nyhetsarkiv/rundskriv/",
+      "version": "All current circulars",
+      "item_count": 78,
       "item_type": "provision",
-      "last_refresh": "2026-04-04",
+      "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
       "completeness": "full",
-      "completeness_note": "109 rundskriv covering ICT security expectations, internal control, AML/CFT supervisory letters, risk management"
+      "completeness_note": "78 rundskriv -- complete set from Finanstilsynet public archive."
     },
     {
       "id": "ftno_veiledninger",
       "name": "Finanstilsynet Veiledninger (Guidance)",
       "authority": "Finanstilsynet",
-      "url": "https://www.finanstilsynet.no/",
-      "version": "Current guidance documents",
-      "item_count": 106,
+      "url": "https://www.finanstilsynet.no/nyhetsarkiv/rundskriv/",
+      "version": "All current guidance documents",
+      "item_count": 7,
       "item_type": "provision",
-      "last_refresh": "2026-04-04",
+      "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
       "completeness": "full",
-      "completeness_note": "106 veiledninger covering compliance guidance, outsourcing, fitness and propriety, reporting instructions"
+      "completeness_note": "7 veiledninger -- complete set from Finanstilsynet public archive."
     },
     {
       "id": "enforcement_actions",
-      "name": "Finanstilsynet Enforcement Actions",
+      "name": "Finanstilsynet Tilsynsrapporter og Vedtak",
       "authority": "Finanstilsynet",
-      "url": "https://www.finanstilsynet.no/",
-      "version": "Recent enforcement decisions",
-      "item_count": 110,
+      "url": "https://www.finanstilsynet.no/nyhetsarkiv/tilsynsrapporter/",
+      "version": "Recent enforcement decisions and inspection reports",
+      "item_count": 200,
       "item_type": "enforcement_action",
-      "last_refresh": "2026-04-04",
+      "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
-      "completeness": "full",
-      "completeness_note": "110 enforcement actions including administrative fines, licence revocations, restrictions, and public warnings"
+      "completeness": "partial",
+      "completeness_note": "200 most recent inspection reports and enforcement decisions."
     }
   ],
   "gaps": [
     {
-      "id": "full-text",
-      "description": "Full original document text (only summaries included)",
-      "reason": "Summaries provide sufficient context for MCP tool queries",
+      "id": "forskrift-full-corpus",
+      "description": "Only key financial forskrifter included (not the full Lovdata corpus)",
+      "reason": "Focused on Finanstilsynet-administered regulations",
       "impact": "medium",
       "planned": true,
-      "target_version": "0.2"
+      "target_version": "1.1"
+    },
+    {
+      "id": "enforcement-full-text",
+      "description": "Enforcement actions contain summaries, not full inspection reports",
+      "reason": "Full reports require individual page scraping",
+      "impact": "medium",
+      "planned": true,
+      "target_version": "1.1"
     },
     {
       "id": "finansklagenemnda",
@@ -73,34 +81,12 @@
       "reason": "Separate data source requiring dedicated ingestion",
       "impact": "medium",
       "planned": true,
-      "target_version": "0.3"
-    },
-    {
-      "id": "eu-financial-directives",
-      "description": "EU financial directives (MiFID II, Solvency II, CRD/CRR, PSD2, DORA, etc.)",
-      "reason": "Covered by the EU Regulations MCP",
-      "impact": "low",
-      "planned": false
+      "target_version": "1.2"
     },
     {
       "id": "repealed-regulations",
       "description": "Historical and repealed regulations",
       "reason": "Focus on current in-force regulations",
-      "impact": "low",
-      "planned": true,
-      "target_version": "0.3"
-    },
-    {
-      "id": "norges-bank-reports",
-      "description": "Norges Bank financial stability reports and publications",
-      "reason": "Separate authority, not covered by Finanstilsynet data",
-      "impact": "low",
-      "planned": false
-    },
-    {
-      "id": "stortinget-proceedings",
-      "description": "Stortinget parliamentary debates on financial legislation",
-      "reason": "Parliamentary records are a separate data source",
       "impact": "low",
       "planned": false
     }
@@ -110,14 +96,22 @@
       "name": "no_fin_search_regulations",
       "category": "search",
       "description": "Full-text search across Finanstilsynet forskrifter, rundskriv, and veiledninger",
-      "data_sources": ["ftno_forskrifter", "ftno_rundskriv", "ftno_veiledninger"],
+      "data_sources": [
+        "ftno_forskrifter",
+        "ftno_rundskriv",
+        "ftno_veiledninger"
+      ],
       "verified": true
     },
     {
       "name": "no_fin_get_regulation",
       "category": "lookup",
       "description": "Retrieve a specific provision by sourcebook and reference",
-      "data_sources": ["ftno_forskrifter", "ftno_rundskriv", "ftno_veiledninger"],
+      "data_sources": [
+        "ftno_forskrifter",
+        "ftno_rundskriv",
+        "ftno_veiledninger"
+      ],
       "verified": true
     },
     {
@@ -131,14 +125,20 @@
       "name": "no_fin_search_enforcement",
       "category": "search",
       "description": "Search Finanstilsynet enforcement actions",
-      "data_sources": ["enforcement_actions"],
+      "data_sources": [
+        "enforcement_actions"
+      ],
       "verified": true
     },
     {
       "name": "no_fin_check_currency",
       "category": "lookup",
       "description": "Check whether a provision is currently in force",
-      "data_sources": ["ftno_forskrifter", "ftno_rundskriv", "ftno_veiledninger"],
+      "data_sources": [
+        "ftno_forskrifter",
+        "ftno_rundskriv",
+        "ftno_veiledninger"
+      ],
       "verified": true
     },
     {
@@ -152,9 +152,9 @@
   "summary": {
     "total_tools": 6,
     "total_sources": 4,
-    "total_items": 486,
-    "db_size_mb": 0.64,
-    "known_gaps": 6,
+    "total_items": 292,
+    "db_size_mb": 0,
+    "known_gaps": 4,
     "gaps_planned": 3
   }
 }

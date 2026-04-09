@@ -1,6 +1,6 @@
 {
   "name": "@ansvar/norwegian-financial-regulation-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "mcpName": "eu.ansvar/norwegian-financial-regulation-mcp",
   "description": "Finanstilsynet (Norwegian FSA) financial regulation MCP server — forskrifter, rundskriv, veiledninger, and enforcement actions",
   "type": "module",
@@ -45,6 +45,7 @@
     "dev": "tsx src/http-server.ts",
     "start": "node dist/src/http-server.js",
     "seed": "npx tsx scripts/seed-sample.ts",
+    "ingest": "npx tsx scripts/ingest-all.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit"
   },
