@@ -11,7 +11,7 @@
 # --- Stage 1: Build TypeScript + ingest data ---
 FROM node:20-slim AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 python3 build-essential curl bzip2 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 python3 build-essential bzip2 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package.json package-lock.json* ./

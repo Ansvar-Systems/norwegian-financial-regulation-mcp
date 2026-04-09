@@ -397,9 +397,9 @@ async function fetchEnforcementActions(): Promise<void> {
 
 // ── Fetch ALL Finanstilsynet forskrifter from Lovdata public dataset ────────
 
-import { execSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 
 const LOVDATA_DATASET_URL =
   "https://api.lovdata.no/v1/publicData/get/gjeldende-sentrale-forskrifter.tar.bz2";
@@ -412,13 +412,21 @@ async function fetchForskrifter(): Promise<void> {
   const tarFile = "/tmp/lovdata-forskrifter.tar.bz2";
 
   console.log("  Downloading Lovdata public dataset (~21MB)...");
-  execSync(`curl -sL "${LOVDATA_DATASET_URL}" -o "${tarFile}"`, {
-    stdio: "inherit",
+  const response = await fetch(LOVDATA_DATASET_URL, {
+    headers: {
+      "User-Agent": "AnsvarMCP/1.0 (compliance research; https://ansvar.eu)",
+    },
   });
+  if (!response.ok) {
+    throw new Error(`Failed to download Lovdata dataset: HTTP ${response.status}`);
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+  writeFileSync(tarFile, buffer);
+  console.log(`  Downloaded ${(buffer.length / 1024 / 1024).toFixed(1)}MB`);
 
-  execSync(`rm -rf "${tmpDir}" && mkdir -p "${tmpDir}" && cd "${tmpDir}" && tar xjf "${tarFile}"`, {
-    stdio: "inherit",
-  });
+  execFileSync("rm", ["-rf", tmpDir]);
+  mkdirSync(tmpDir, { recursive: true });
+  execFileSync("tar", ["xjf", tarFile, "-C", tmpDir]);
 
   const sfDir = join(tmpDir, "sf");
   const xmlFiles = readdirSync(sfDir).filter((f) => f.endsWith(".xml"));
@@ -492,7 +500,7 @@ async function fetchForskrifter(): Promise<void> {
   }
 
   // Clean up
-  execSync(`rm -rf "${tmpDir}" "${tarFile}"`, { stdio: "inherit" });
+  execFileSync("rm", ["-rf", tmpDir, tarFile]);
 
   console.log(`Forskrifter: ${inserted} inserted, ${skipped} skipped`);
 }
