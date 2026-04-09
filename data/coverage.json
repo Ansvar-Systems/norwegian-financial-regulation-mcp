@@ -11,12 +11,12 @@
       "authority": "Lovdata / Finansdepartementet",
       "url": "https://lovdata.no",
       "version": "Current in-force regulations",
-      "item_count": 7,
+      "item_count": 26,
       "item_type": "provision",
       "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
       "completeness": "partial",
-      "completeness_note": "7 key financial regulations from Lovdata covering CRR/CRD, AML, insurance, securities, real estate, and payment services."
+      "completeness_note": "26 key financial regulations from Lovdata covering CRR/CRD, AML, insurance, securities, real estate, and payment services."
     },
     {
       "id": "ftno_rundskriv",
@@ -50,12 +50,12 @@
       "authority": "Finanstilsynet",
       "url": "https://www.finanstilsynet.no/nyhetsarkiv/tilsynsrapporter/",
       "version": "Recent enforcement decisions and inspection reports",
-      "item_count": 200,
+      "item_count": 1072,
       "item_type": "enforcement_action",
       "last_refresh": "2026-04-09",
       "refresh_frequency": "quarterly",
       "completeness": "partial",
-      "completeness_note": "200 most recent inspection reports and enforcement decisions."
+      "completeness_note": "1072 most recent inspection reports and enforcement decisions."
     }
   ],
   "gaps": [
@@ -152,7 +152,7 @@
   "summary": {
     "total_tools": 6,
     "total_sources": 4,
-    "total_items": 292,
+    "total_items": 1183,
     "db_size_mb": 0,
     "known_gaps": 4,
     "gaps_planned": 3

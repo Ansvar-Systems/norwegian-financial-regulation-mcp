@@ -331,15 +331,14 @@ async function fetchEnforcementActions(): Promise<void> {
     `Total: ${firstPage.totalHits} enforcement reports across ${firstPage.totalPages} pages`,
   );
 
-  // Fetch the most recent 200 (8 pages)
-  const maxPages = Math.min(firstPage.totalPages, 8);
+  // Fetch ALL pages
   const allHits: ApiHit[] = [...firstPage.hits];
 
-  for (let page = 2; page <= maxPages; page++) {
+  for (let page = 2; page <= firstPage.totalPages; page++) {
     await sleep(DELAY_MS);
     const pageData = await fetchJson<ApiResponse>(`${baseUrl}&page=${page}`);
     allHits.push(...pageData.hits);
-    console.log(`  Page ${page}/${maxPages}: ${pageData.hits.length} items`);
+    console.log(`  Page ${page}/${firstPage.totalPages}: ${pageData.hits.length} items`);
   }
 
   console.log(`Fetched ${allHits.length} enforcement entries`);
@@ -396,90 +395,86 @@ async function fetchEnforcementActions(): Promise<void> {
   console.log(`Enforcement actions: ${inserted} inserted`);
 }
 
-// ── Fetch key financial forskrifter from Lovdata ────────────────────────────
+// ── Fetch ALL Finanstilsynet forskrifter from Lovdata public dataset ────────
 
-const LOVDATA_FORSKRIFTER = [
-  {
-    reference: "FOR-2014-08-22-1097",
-    url: "https://lovdata.no/dokument/SF/forskrift/2014-08-22-1097",
-    title: "CRR/CRD-forskriften (kapitalkrav)",
-  },
-  {
-    reference: "FOR-2008-09-22-1080",
-    url: "https://lovdata.no/dokument/SF/forskrift/2008-09-22-1080",
-    title: "Forskrift om risikostyring og internkontroll",
-  },
-  {
-    reference: "FOR-2018-09-14-1324",
-    url: "https://lovdata.no/dokument/SF/forskrift/2018-09-14-1324",
-    title: "Hvitvaskingsforskriften",
-  },
-  {
-    reference: "FOR-2016-12-09-1502",
-    url: "https://lovdata.no/dokument/SF/forskrift/2016-12-09-1502",
-    title: "Forskrift om krav til nye utlan med pant i bolig (utlansforskriften)",
-  },
-  {
-    reference: "FOR-2007-06-29-876",
-    url: "https://lovdata.no/dokument/SF/forskrift/2007-06-29-876",
-    title: "Eiendomsmeglingsforskriften",
-  },
-  {
-    reference: "FOR-2011-12-21-1467",
-    url: "https://lovdata.no/dokument/SF/forskrift/2011-12-21-1467",
-    title: "Verdipapirfondforskriften",
-  },
-  {
-    reference: "FOR-2015-12-18-1824",
-    url: "https://lovdata.no/dokument/SF/forskrift/2015-12-18-1824",
-    title: "Solvens II-forskriften (forsikring)",
-  },
-];
+import { execSync } from "node:child_process";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const LOVDATA_DATASET_URL =
+  "https://api.lovdata.no/v1/publicData/get/gjeldende-sentrale-forskrifter.tar.bz2";
 
 async function fetchForskrifter(): Promise<void> {
-  console.log("\n--- Fetching forskrifter from Lovdata ---");
+  console.log("\n--- Fetching ALL Finanstilsynet forskrifter from Lovdata public dataset ---");
 
+  // Download and extract the complete forskrifter dataset
+  const tmpDir = "/tmp/lovdata-forskrifter";
+  const tarFile = "/tmp/lovdata-forskrifter.tar.bz2";
+
+  console.log("  Downloading Lovdata public dataset (~21MB)...");
+  execSync(`curl -sL "${LOVDATA_DATASET_URL}" -o "${tarFile}"`, {
+    stdio: "inherit",
+  });
+
+  execSync(`rm -rf "${tmpDir}" && mkdir -p "${tmpDir}" && cd "${tmpDir}" && tar xjf "${tarFile}"`, {
+    stdio: "inherit",
+  });
+
+  const sfDir = join(tmpDir, "sf");
+  const xmlFiles = readdirSync(sfDir).filter((f) => f.endsWith(".xml"));
+  console.log(`  Dataset contains ${xmlFiles.length} forskrifter total`);
+
+  // Find all forskrifter where Finanstilsynet is listed as subunit (etat)
   const insertProvision = db.prepare(`
     INSERT INTO provisions (sourcebook_id, reference, title, text, type, status, effective_date, chapter, section)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let inserted = 0;
-  let failed = 0;
+  let skipped = 0;
 
-  for (const forskrift of LOVDATA_FORSKRIFTER) {
+  for (const fname of xmlFiles) {
+    const filePath = join(sfDir, fname);
+    const content = readFileSync(filePath, "utf-8");
+
+    // Only include forskrifter where Finanstilsynet is the administering subunit
+    if (!content.includes("<li>Finanstilsynet</li>") || !content.includes("subunit")) {
+      continue;
+    }
+
+    // Extract metadata from the HTML/XML header
+    const refMatch = content.match(/<dd class="legacyID">(FOR-[^<]+)/);
+    const titleMatch = content.match(/<title>([^<]+)/);
+    const dateMatch = content.match(/<dd class="dateInForce">([^<]+)/);
+
+    const reference = refMatch?.[1] ?? fname.replace("sf-", "FOR-").replace(".xml", "");
+    const title = titleMatch?.[1] ?? "Untitled forskrift";
+    const effectiveDate = dateMatch?.[1] ?? "";
+
+    // Extract full text content
+    let fullText = extractPageText(content);
+
+    // Truncate very long forskrifter to keep DB size reasonable
+    if (fullText.length > 50000) {
+      const lovdataUrl = `https://lovdata.no/dokument/SF/forskrift/${reference.replace("FOR-", "")}`;
+      fullText =
+        fullText.slice(0, 50000) +
+        "\n\n[Truncated -- full text at " +
+        lovdataUrl +
+        "]";
+    }
+
+    if (fullText.length < 50) {
+      console.warn(`  Skipping ${reference}: too short (${fullText.length} chars)`);
+      skipped++;
+      continue;
+    }
+
     try {
-      await sleep(DELAY_MS);
-      const html = await fetchHtml(forskrift.url);
-      let fullText = extractPageText(html);
-
-      if (fullText.length < 100) {
-        console.warn(
-          `  Warning: Short content for ${forskrift.reference} (${fullText.length} chars), using title`,
-        );
-        fullText = forskrift.title;
-      }
-
-      // Truncate very long forskrifter to keep DB size reasonable
-      if (fullText.length > 50000) {
-        fullText =
-          fullText.slice(0, 50000) +
-          "\n\n[Truncated -- full text at " +
-          forskrift.url +
-          "]";
-      }
-
-      const dateMatch = forskrift.reference.match(
-        /FOR-(\d{4})-(\d{2})-(\d{2})/,
-      );
-      const effectiveDate = dateMatch
-        ? `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`
-        : "";
-
       insertProvision.run(
         "FTNO_FORSKRIFTER",
-        forskrift.reference,
-        forskrift.title,
+        reference,
+        title,
         fullText,
         "forskrift",
         "in_force",
@@ -488,17 +483,18 @@ async function fetchForskrifter(): Promise<void> {
         "",
       );
       inserted++;
-      console.log(
-        `  [${inserted}/${LOVDATA_FORSKRIFTER.length}] ${forskrift.reference}: ${forskrift.title}`,
-      );
+      console.log(`  [${inserted}] ${reference}: ${title}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`  Error fetching ${forskrift.reference}: ${msg}`);
-      failed++;
+      console.warn(`  Error inserting ${reference}: ${msg}`);
+      skipped++;
     }
   }
 
-  console.log(`Forskrifter: ${inserted} inserted, ${failed} failed`);
+  // Clean up
+  execSync(`rm -rf "${tmpDir}" "${tarFile}"`, { stdio: "inherit" });
+
+  console.log(`Forskrifter: ${inserted} inserted, ${skipped} skipped`);
 }
 
 // ── Update coverage.json ────────────────────────────────────────────────────
