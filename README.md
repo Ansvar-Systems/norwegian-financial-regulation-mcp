@@ -83,13 +83,11 @@ Full tool documentation: [TOOLS.md](TOOLS.md)
 
 | Sourcebook | Records | Content |
 |------------|---------|---------|
-| FTNO_FORSKRIFTER | 86 provisions | Capital adequacy, AML, insurance solvency, securities trading, payment services |
-| FTNO_RUNDSKRIV | 55 provisions | ICT security, internal control, AML/CFT supervisory letters, risk management |
-| FTNO_VEILEDNINGER | 59 provisions | Compliance guidance, outsourcing, fitness and propriety, reporting instructions |
-| Enforcement actions | 36 actions | Administrative fines, licence revocations, restrictions, public warnings |
-| **Total** | **236 records** | ~408 KB database |
-
-This is a seed dataset. Full automated ingestion from lovdata.no and finanstilsynet.no is planned.
+| FTNO_FORSKRIFTER | 158 provisions | Capital adequacy, AML, insurance solvency, securities trading, payment services |
+| FTNO_RUNDSKRIV | 109 provisions | ICT security, internal control, AML/CFT supervisory letters, risk management |
+| FTNO_VEILEDNINGER | 106 provisions | Compliance guidance, outsourcing, fitness and propriety, reporting instructions |
+| Enforcement actions | 110 actions | Administrative fines, licence revocations, restrictions, public warnings |
+| **Total** | **486 records** | ~644 KB database |
 
 **Language note:** All regulatory content is in Norwegian. Search queries work best in Norwegian (e.g., `hvitvaskingsloven`, `kapitaldekning`, `IKT-sikkerhet`, `overtredelsesgebyr`).
 
