@@ -22,7 +22,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import {
   listSourcebooks,
   searchProvisions,
@@ -147,6 +147,36 @@ const CheckCurrencyArgs = z.object({
   reference: z.string().min(1),
 });
 
+// --- Helpers ---
+
+const RESPONSE_META = {
+  disclaimer:
+    "For informational purposes only. Not legal advice. Verify with official Finanstilsynet publications at finanstilsynet.no.",
+  data_age: "2026-04-04",
+  copyright: "© Finanstilsynet. Data sourced from finanstilsynet.no.",
+  source_url: "https://www.finanstilsynet.no/",
+};
+
+function responseMeta() {
+  return RESPONSE_META;
+}
+
+function addCitation(
+  item: Record<string, unknown>,
+  lookup: string,
+): Record<string, unknown> {
+  const sourcebook = (item.sourcebook as string) ?? "";
+  const reference = (item.reference as string) ?? (item.id as string) ?? "";
+  return {
+    ...item,
+    _citation: {
+      canonical_ref: sourcebook ? `${sourcebook}::${reference}` : reference,
+      display_text: `Finanstilsynet: ${reference || sourcebook}`,
+      lookup,
+    },
+  };
+}
+
 // --- MCP server factory ---
 
 function createMcpServer(): Server {
@@ -163,14 +193,30 @@ function createMcpServer(): Server {
     const { name, arguments: args = {} } = request.params;
 
     function textContent(data: unknown) {
+      const payload =
+        typeof data === "object" && data !== null
+          ? { ...(data as object), _meta: responseMeta() }
+          : { data, _meta: responseMeta() };
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+        content: [{ type: "text" as const, text: JSON.stringify(payload, null, 2) }],
       };
     }
 
-    function errorContent(message: string) {
+    function errorContent(
+      message: string,
+      errorType: "not_found" | "invalid_input" | "internal_error" = "internal_error",
+    ) {
       return {
-        content: [{ type: "text" as const, text: message }],
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              { error: message, _error_type: errorType, _meta: responseMeta() },
+              null,
+              2,
+            ),
+          },
+        ],
         isError: true as const,
       };
     }
@@ -185,7 +231,10 @@ function createMcpServer(): Server {
             status: parsed.status,
             limit: parsed.limit,
           });
-          return textContent({ results, count: results.length });
+          const citedResults = (results as Record<string, unknown>[]).map((r) =>
+            addCitation(r, "no_fin_get_regulation"),
+          );
+          return textContent({ results: citedResults, count: results.length });
         }
 
         case "no_fin_get_regulation": {
@@ -194,9 +243,12 @@ function createMcpServer(): Server {
           if (!provision) {
             return errorContent(
               `Provision not found: ${parsed.sourcebook} ${parsed.reference}`,
+              "not_found",
             );
           }
-          return textContent(provision);
+          return textContent(
+            addCitation(provision as Record<string, unknown>, "no_fin_get_regulation"),
+          );
         }
 
         case "no_fin_list_sourcebooks": {
@@ -211,7 +263,10 @@ function createMcpServer(): Server {
             action_type: parsed.action_type,
             limit: parsed.limit,
           });
-          return textContent({ results, count: results.length });
+          const citedResults = (results as Record<string, unknown>[]).map((r) =>
+            addCitation(r, "no_fin_search_enforcement"),
+          );
+          return textContent({ results: citedResults, count: results.length });
         }
 
         case "no_fin_check_currency": {
@@ -232,11 +287,14 @@ function createMcpServer(): Server {
         }
 
         default:
-          return errorContent(`Unknown tool: ${name}`);
+          return errorContent(`Unknown tool: ${name}`, "invalid_input");
       }
     } catch (err) {
+      if (err instanceof ZodError) {
+        return errorContent(`Invalid input for ${name}: ${err.message}`, "invalid_input");
+      }
       const message = err instanceof Error ? err.message : String(err);
-      return errorContent(`Error in ${name}: ${message}`);
+      return errorContent(`Error in ${name}: ${message}`, "internal_error");
     }
   });
 
